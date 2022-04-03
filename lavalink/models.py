@@ -110,10 +110,17 @@ class BasePlayer(ABC):
             'sessionId': data['session_id']
         })
 
-        self.channel_id = data['channel_id']
+        raw_channel_id = data['channel_id']
+        raw_guild_id = data['guild_id']
+        self.channel_id = int(raw_channel_id) if raw_channel_id else None
+        self.guild_id = int(raw_guild_id) if raw_guild_id else None
 
         if not self.channel_id:  # We're disconnecting
             self._voice_state.clear()
+            player = self._lavalink.player_manager.get(self.guild_id)
+            if player and player.queue:
+                player.queue.clear()
+                await player.stop()
             return
 
         await self._dispatch_voice_update()
